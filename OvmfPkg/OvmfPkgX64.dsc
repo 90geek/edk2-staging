@@ -31,20 +31,25 @@
   #
   DEFINE SECURE_BOOT_ENABLE      = FALSE
   DEFINE SMM_REQUIRE             = FALSE
-  DEFINE SOURCE_DEBUG_ENABLE     = FALSE
+  DEFINE SOURCE_DEBUG_ENABLE     = TRUE
   DEFINE TPM_ENABLE              = FALSE
   DEFINE TPM_CONFIG_ENABLE       = FALSE
 
   #
   # Network definition
   #
-  DEFINE NETWORK_TLS_ENABLE             = FALSE
-  DEFINE NETWORK_IP6_ENABLE             = FALSE
-  DEFINE NETWORK_HTTP_BOOT_ENABLE       = FALSE
+  DEFINE NETWORK_TLS_ENABLE             = TRUE
+  DEFINE NETWORK_IP6_ENABLE             = TRUE
+  DEFINE NETWORK_HTTP_BOOT_ENABLE       = TRUE
   DEFINE NETWORK_ALLOW_HTTP_CONNECTIONS = TRUE
   DEFINE NETWORK_ISCSI_ENABLE           = TRUE
 
 !include NetworkPkg/NetworkDefines.dsc.inc
+  #
+  # Redfish definition
+  #
+  DEFINE REDFISH_ENABLE = TRUE
+  DEFINE REDFISH_CLIENT = TRUE
 
   #
   # Device drivers
@@ -226,6 +231,10 @@
 !if $(NETWORK_TLS_ENABLE) == TRUE
   TlsLib|CryptoPkg/Library/TlsLib/TlsLib.inf
 !endif
+  !if $(REDFISH_ENABLE) == TRUE
+    RedfishPlatformHostInterfaceLib|EmulatorPkg/Library/RedfishPlatformHostInterfaceLib/RedfishPlatformHostInterfaceLib.inf
+    RedfishPlatformCredentialLib|EmulatorPkg/Library/RedfishPlatformCredentialLib/RedfishPlatformCredentialLib.inf
+  !endif
 
   ShellLib|ShellPkg/Library/UefiShellLib/UefiShellLib.inf
   ShellCEntryLib|ShellPkg/Library/UefiShellCEntryLib/UefiShellCEntryLib.inf
@@ -576,6 +585,18 @@
   # Network Pcds
   #
 !include NetworkPkg/NetworkPcds.dsc.inc
+!if $(REDFISH_ENABLE) == TRUE
+  gEfiRedfishPkgTokenSpaceGuid.PcdRedfishRestExServiceDevicePath.DevicePathMatchMode|DEVICE_PATH_MATCH_MAC_NODE
+  gEfiRedfishPkgTokenSpaceGuid.PcdRedfishRestExServiceDevicePath.DevicePathNum|1
+  #
+  # Below is the MAC address of network adapter on EDK2 Emulator platform.
+  # You can use ifconfig under EFI shell to get the MAC address of network adapter on EDK2 Emulator platform.
+  #
+  # gEfiRedfishPkgTokenSpaceGuid.PcdRedfishRestExServiceDevicePath.DevicePath|{DEVICE_PATH("MAC(112233445566,0x1)")}
+  # gEfiRedfishPkgTokenSpaceGuid.PcdRedfishRestExServiceDevicePath.DevicePath|{0x02,0x01,0x0c,0x00,0xd0,0x41,0x03,0x0a,0x00,0x00,0x00,0x00,0x01,0x01,0x06,0x00,0x00,0x02,0x01,0x01,0x06,0x00,0x00,0x00,0x03,0x0b,0x25,0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x7f,0xff,0x04,0x00}
+  gEfiRedfishPkgTokenSpaceGuid.PcdRedfishRestExServiceAccessModeInBand|False
+  gEfiRedfishPkgTokenSpaceGuid.PcdRedfishDiscoverAccessModeInBand|False
+!endif
 
   gEfiShellPkgTokenSpaceGuid.PcdShellFileOperationSize|0x20000
 
@@ -904,6 +925,12 @@
   }
 !endif
   OvmfPkg/VirtioNetDxe/VirtioNet.inf
+
+!if $(REDFISH_ENABLE) == TRUE
+  EmulatorPkg/Hii2RedfishMemoryDxe/Hii2RedfishMemoryDxe.inf
+!endif
+!include RedfishPkg/Redfish.dsc.inc
+!include RedfishClientPkg/RedfishClient.dsc.inc
 
   #
   # Usb Support
